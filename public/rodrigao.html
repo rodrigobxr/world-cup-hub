@@ -160,6 +160,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
       <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
       WhatsApp
     </a>
+    <button id="music-btn" onclick="toggleMusic()" class="social-btn" style="background:#1A1A1A;color:var(--gold);border:1px solid var(--border-gold);cursor:pointer;" title="Música da torcida">
+      <span id="music-icon">🔇</span>
+      <span id="music-label">TORCIDA OFF</span>
+    </button>
   </div>
 </div>
 
@@ -485,7 +489,43 @@ async function doSync(){
   document.getElementById('last-sync-label').textContent='Última sync: '+new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 }
 
-function doSyncNews(){showToast('Use o app web para buscar notícias via IA.');}
+async function doSyncNews(){
+  const el=document.getElementById('news-container');
+  el.innerHTML='<div style="color:var(--dim);text-align:center;padding:2rem;grid-column:1/-1;">Buscando notícias da Copa 2026...</div>';
+  const feeds=[
+    {src:'ge.globo',url:'https://ge.globo.com/futebol/copa-do-mundo/rss.xml'},
+    {src:'ESPN Brasil',url:'https://www.espn.com.br/espn/rss/futebol/news'},
+    {src:'CBF',url:'https://www.cbf.com.br/rss/noticias'}
+  ];
+  const proxy='https://api.allorigins.win/raw?url=';
+  const all=[];
+  for(const f of feeds){
+    try{
+      const r=await fetch(proxy+encodeURIComponent(f.url));
+      if(!r.ok) continue;
+      const txt=await r.text();
+      const doc=new DOMParser().parseFromString(txt,'text/xml');
+      const items=Array.from(doc.querySelectorAll('item')).slice(0,8);
+      items.forEach(it=>{
+        const title=it.querySelector('title')?.textContent||'';
+        const link=it.querySelector('link')?.textContent||'#';
+        const desc=(it.querySelector('description')?.textContent||'').replace(/<[^>]*>/g,'').slice(0,160);
+        const low=(title+' '+desc).toLowerCase();
+        if(f.src==='ge.globo' || low.includes('copa')||low.includes('mundo')||low.includes('fifa')||low.includes('seleção')||low.includes('brasil')){
+          all.push({title,url:link,summary:desc,source:f.src});
+        }
+      });
+    }catch(e){console.warn('feed fail',f.src,e);}
+  }
+  if(!all.length){
+    el.innerHTML='<div style="color:var(--dim);text-align:center;padding:2rem;grid-column:1/-1;">Não foi possível carregar as notícias agora. <a href="https://ge.globo.com/futebol/copa-do-mundo/" target="_blank" style="color:var(--gold);">Abrir ge.globo →</a></div>';
+    return;
+  }
+  NEWS=all.slice(0,30);
+  saveData();
+  renderNews();
+  showToast('✓ NOTÍCIAS ATUALIZADAS!');
+}
 
 function renderHoje(){
   const d=new Date();
@@ -538,8 +578,37 @@ function renderGroups(){
   document.getElementById('standings-grid').innerHTML=html;
 }
 
+function computeScorersFromMatches(){
+  // Auto-calcula artilharia a partir dos gols registrados nas partidas
+  const tally={};
+  RESULTS.forEach(m=>{
+    if(m.status!=='FT'||!m.goals) return;
+    (m.goals.h||[]).forEach(g=>{
+      const name=String(g).replace(/\s*\d+'.*$/,'').replace(/\(.*?\)/g,'').trim();
+      if(!name||/^og$|gol contra/i.test(name)) return;
+      const k=name+'|'+m.h;
+      tally[k]=tally[k]||{n:name,t:m.h,g:0};tally[k].g++;
+    });
+    (m.goals.a||[]).forEach(g=>{
+      const name=String(g).replace(/\s*\d+'.*$/,'').replace(/\(.*?\)/g,'').trim();
+      if(!name||/^og$|gol contra/i.test(name)) return;
+      const k=name+'|'+m.a;
+      tally[k]=tally[k]||{n:name,t:m.a,g:0};tally[k].g++;
+    });
+  });
+  return Object.values(tally).sort((a,b)=>b.g-a.g);
+}
+
 function renderScorers(){
-  const sorted=[...SCORERS].sort((a,b)=>b.g-a.g);
+  // Combina dados manuais e o cálculo automático dos gols nas partidas
+  const auto=computeScorersFromMatches();
+  const merged={};
+  auto.forEach(s=>{merged[s.n+'|'+s.t]={...s};});
+  SCORERS.forEach(s=>{
+    const k=s.n+'|'+s.t;
+    if(!merged[k]||s.g>merged[k].g) merged[k]={n:s.n,t:s.t,g:s.g};
+  });
+  const sorted=Object.values(merged).sort((a,b)=>b.g-a.g||a.n.localeCompare(b.n));
   if(sorted.length)document.getElementById('st-top').textContent=sorted[0].n+' ('+sorted[0].g+')';
   document.getElementById('scorers-full').innerHTML=sorted.slice(0,10).map((s,i)=>`
     <div class="scitem">
@@ -579,14 +648,23 @@ function renderCalendar(){
     html+=`<div class="date-label" style="color:${isHoje?'var(--gold)':'var(--dim)'}">${isHoje?'● ':''}DATA: ${date}</div>`;
     ms.forEach(m=>{
       const done=m.status==='FT';
-      html+=`<div class="mi">
-        ${done?'<span class="mend">FIM</span>':'<span class="mt">'+m.time+'</span>'}
-        <div class="mteams">
-          <div class="mteam ${done&&m.hs>m.as?'win':''}">${getFlagSm(m.h)}<span class="mtn">${m.h}</span></div>
-          <div class="mteam ${done&&m.as>m.hs?'win':''}">${getFlagSm(m.a)}<span class="mtn">${m.a}</span></div>
+      const goalsH=(m.goals?.h||[]);
+      const goalsA=(m.goals?.a||[]);
+      const hasGoals=done&&(goalsH.length||goalsA.length);
+      html+=`<div style="border-bottom:1px solid rgba(255,255,255,.03);padding-bottom:6px;">
+        <div class="mi" style="border-bottom:none;">
+          ${done?'<span class="mend">FIM</span>':'<span class="mt">'+m.time+'</span>'}
+          <div class="mteams">
+            <div class="mteam ${done&&m.hs>m.as?'win':''}">${getFlagSm(m.h)}<span class="mtn">${m.h}</span></div>
+            <div class="mteam ${done&&m.as>m.hs?'win':''}">${getFlagSm(m.a)}<span class="mtn">${m.a}</span></div>
+          </div>
+          <span class="badge bo" style="font-size:9px;">G.${m.g}</span>
+          ${done?'<div class="msco"><span class="msc">'+m.hs+'</span><span class="msep">x</span><span class="msc">'+m.as+'</span></div>':'<span style="font-size:10px;color:var(--dim);padding:0 8px;">VS</span>'}
         </div>
-        <span class="badge bo" style="font-size:9px;">G.${m.g}</span>
-        ${done?'<div class="msco"><span class="msc">'+m.hs+'</span><span class="msep">x</span><span class="msc">'+m.as+'</span></div>':'<span style="font-size:10px;color:var(--dim);padding:0 8px;">VS</span>'}
+        ${hasGoals?`<div style="display:flex;gap:18px;padding:4px 0 4px 57px;font-size:10px;color:var(--muted);flex-wrap:wrap;">
+          <div style="flex:1;min-width:140px;">${goalsH.map(g=>'⚽ '+g).join(' · ')||'<span style="color:var(--dim)">—</span>'}</div>
+          <div style="flex:1;min-width:140px;text-align:right;">${goalsA.map(g=>g+' ⚽').join(' · ')||'<span style="color:var(--dim)">—</span>'}</div>
+        </div>`:''}
       </div>`;
     });
   }
@@ -630,12 +708,30 @@ function renderPainel(){
 
 function renderNews(){
   const el=document.getElementById('news-container');
-  if(!NEWS.length){el.innerHTML='<div style="color:var(--dim);text-align:center;padding:3rem;grid-column:1/-1;">Use o app web (rodrigao-copa2026.base44.app) para buscar notícias via IA.</div>';return;}
+  if(!NEWS.length){el.innerHTML='<div style="color:var(--dim);text-align:center;padding:3rem;grid-column:1/-1;">Clique em <b style="color:var(--gold)">↻ ATUALIZAR</b> para buscar as notícias da Copa do Mundo 2026 direto do ge.globo, ESPN e CBF.</div>';return;}
   el.innerHTML=NEWS.map(n=>`<a class="news-card" href="${n.url||'#'}" target="_blank" rel="noopener">
     <div class="news-title">${n.title}</div>
     ${n.summary?'<div class="news-summary">'+n.summary+'</div>':''}
-    ${n.source?'<div class="news-source">'+n.source+'</div>':''}
+    ${n.source?'<div class="news-source">📰 '+n.source+'</div>':''}
   </a>`).join('');
+}
+
+// === Música da torcida ===
+function toggleMusic(){
+  let a=document.getElementById('torcida-audio');
+  if(!a){
+    a=document.createElement('audio');
+    a.id='torcida-audio';a.src='/torcida.mp3';a.loop=true;a.volume=0.6;
+    document.body.appendChild(a);
+  }
+  const icon=document.getElementById('music-icon');
+  const label=document.getElementById('music-label');
+  if(a.paused){
+    a.play().then(()=>{icon.textContent='🔊';label.textContent='TORCIDA ON';})
+            .catch(()=>showToast('Não foi possível tocar a música',false));
+  }else{
+    a.pause();icon.textContent='🔇';label.textContent='TORCIDA OFF';
+  }
 }
 
 function renderAdminPanel(){

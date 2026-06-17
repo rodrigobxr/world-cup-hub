@@ -1,29 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Your App" },
-      { name: "description", content: "Replace this with a one-sentence description of your app." },
-      { property: "og:title", content: "Your App" },
-      { property: "og:description", content: "Replace this with a one-sentence description of your app." },
+      { title: "Rodrigão — Copa do Mundo 2026" },
+      { name: "description", content: "Acompanhe a Copa do Mundo FIFA 2026 com Rodrigão: jogos de hoje, grupos, mata-mata, artilharia e notícias." },
     ],
   }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
+  useEffect(() => {
+    window.location.replace("/rodrigao.html");
+  }, []);
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div style={{ minHeight: "100vh", background: "#0C0C0C", color: "#F5C842", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif" }}>
+      Carregando Rodrigão — Copa 2026...
     </div>
   );
 }
