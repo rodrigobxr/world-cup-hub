@@ -584,12 +584,14 @@ function computeScorersFromMatches(){
   RESULTS.forEach(m=>{
     if(m.status!=='FT'||!m.goals) return;
     (m.goals.h||[]).forEach(g=>{
+      if(/contra|own goal|og/i.test(String(g))) return;
       const name=String(g).replace(/\s*\d+'.*$/,'').replace(/\(.*?\)/g,'').trim();
       if(!name||/^og$|gol contra/i.test(name)) return;
       const k=name+'|'+m.h;
       tally[k]=tally[k]||{n:name,t:m.h,g:0};tally[k].g++;
     });
     (m.goals.a||[]).forEach(g=>{
+      if(/contra|own goal|og/i.test(String(g))) return;
       const name=String(g).replace(/\s*\d+'.*$/,'').replace(/\(.*?\)/g,'').trim();
       if(!name||/^og$|gol contra/i.test(name)) return;
       const k=name+'|'+m.a;
