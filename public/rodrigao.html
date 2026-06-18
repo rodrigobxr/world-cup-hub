@@ -595,17 +595,24 @@ function computeScorersFromMatches(){
 }
 
 function renderScorers(){
-  // Combina dados manuais e o cálculo automático dos gols nas partidas
+  // Artilharia 100% calculada a partir dos gols reais marcados nas partidas (status FT)
+  // Agrupa por nome normalizado para evitar duplicatas (Haaland aparecendo 2x, etc).
   const auto=computeScorersFromMatches();
-  const merged={};
-  auto.forEach(s=>{merged[s.n+'|'+s.t]={...s};});
-  SCORERS.forEach(s=>{
-    const k=s.n+'|'+s.t;
-    if(!merged[k]||s.g>merged[k].g) merged[k]={n:s.n,t:s.t,g:s.g};
+  const byName={};
+  auto.forEach(s=>{
+    const key=s.n.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'');
+    if(!byName[key]) byName[key]={n:s.n,t:s.t,g:0};
+    byName[key].g+=s.g;
   });
-  const sorted=Object.values(merged).sort((a,b)=>b.g-a.g||a.n.localeCompare(b.n));
-  if(sorted.length)document.getElementById('st-top').textContent=sorted[0].n+' ('+sorted[0].g+')';
-  document.getElementById('scorers-full').innerHTML=sorted.slice(0,10).map((s,i)=>`
+  const sorted=Object.values(byName).sort((a,b)=>b.g-a.g||a.n.localeCompare(b.n));
+  const el=document.getElementById('scorers-full');
+  if(!sorted.length){
+    document.getElementById('st-top').textContent='—';
+    el.innerHTML='<div style="color:var(--dim);text-align:center;padding:2rem;">Nenhum gol registrado ainda. A artilharia será calculada automaticamente a partir das partidas encerradas.</div>';
+    return;
+  }
+  document.getElementById('st-top').textContent=sorted[0].n+' ('+sorted[0].g+')';
+  el.innerHTML=sorted.slice(0,10).map((s,i)=>`
     <div class="scitem">
       <div class="scrank ${i===0?'scr1':''}">${i+1}</div>
       <div class="scinfo"><div class="scname">${s.n}</div><div class="scteam">${getFlagSm(s.t)}${s.t}</div></div>
