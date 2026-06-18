@@ -175,6 +175,17 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
   </div>
 </div>
 
+<nav class="mobile-nav" id="mobileNav">
+  <button data-mn="hoje" class="active" onclick="nav('hoje')">📅 HOJE</button>
+  <button data-mn="painel" onclick="nav('painel')">⬡ VISÃO GERAL</button>
+  <button data-mn="matamata" onclick="nav('matamata')">🏆 MATA-MATA</button>
+  <button data-mn="jogos" onclick="nav('jogos')">▶ CALENDÁRIO</button>
+  <button data-mn="grupos" onclick="nav('grupos')">◈ GRUPOS</button>
+  <button data-mn="artilharia" onclick="nav('artilharia')">⚽ ARTILHARIA</button>
+  <button data-mn="noticias" onclick="nav('noticias')">📰 NOTÍCIAS</button>
+  <button data-mn="api" onclick="nav('api')">⚙️ AJUSTE</button>
+</nav>
+
 <div class="main">
 <nav class="sidebar">
   <div>
