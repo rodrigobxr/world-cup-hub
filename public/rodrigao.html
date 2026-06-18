@@ -781,7 +781,7 @@ function renderAll(){
   renderHoje();renderGroups();renderScorers();renderMataMata();renderCalendar();renderPainel();renderNews();
 }
 
-window.onload=()=>{loadData();renderAll();renderAdminPanel();};
+window.onload=()=>{loadData();renderAll();renderAdminPanel();if(!NEWS.length)doSyncNews();};
 </script>
 </body>
 </html>
