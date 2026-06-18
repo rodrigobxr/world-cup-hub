@@ -210,6 +210,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
     <div class="hoje-title">Jogos de Hoje</div>
     <div class="hoje-sub">Resultados finais das partidas do dia.</div>
   </div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:12px;"><button onclick="doSync()" style="background:var(--gold);color:#000;border:none;padding:8px 14px;border-radius:6px;font-weight:800;font-size:12px;cursor:pointer;">↻ ATUALIZAR PARTIDAS</button></div>
   <div id="hoje-matches-container" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;"></div>
 </div>
 
@@ -254,7 +255,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
 <!-- CALENDÁRIO -->
 <div class="panel" id="panel-jogos">
   <div class="tabs"><button class="tab active" onclick="nav('jogos')">CALENDÁRIO COMPLETO</button><button class="tab" onclick="nav('grupos')">GRUPOS</button></div>
-  <div class="card"><div class="ch"><span class="ct">Histórico e Agenda do Torneio</span></div><div class="cb" id="all-matches"></div></div>
+  <div class="card"><div class="ch"><span class="ct">Histórico e Agenda do Torneio</span><button onclick="doSync()" style="background:var(--gold);color:#000;border:none;padding:6px 12px;border-radius:6px;font-weight:800;font-size:11px;cursor:pointer;">↻ ATUALIZAR PARTIDAS</button></div><div class="cb" id="all-matches"></div></div>
 </div>
 
 <!-- GRUPOS -->
@@ -418,13 +419,7 @@ const DEFAULT_MATCHES=[
   {id:102,d:'19/07',g:'MM',stage:'Final',h:'Venc. 101',a:'Venc. 102',hs:'',as:'',status:'NS',time:'17h'}
 ];
 
-const DEFAULT_SCORERS=[
-  {n:'Erling Haaland',t:'Noruega',g:3},{n:'Lionel Messi',t:'Argentina',g:3},
-  {n:'K. Mbappé',t:'França',g:2},{n:'Jude Bellingham',t:'Inglaterra',g:2},
-  {n:'Victor Gyökeres',t:'Suécia',g:2},{n:'G. Reyna',t:'Estados Unidos',g:2},
-  {n:'Harry Kane',t:'Inglaterra',g:2},{n:'Vinícius Jr.',t:'Brasil',g:1},
-  {n:'Cristiano Ronaldo',t:'Portugal',g:1},{n:'Cody Gakpo',t:'Holanda',g:1}
-];
+const DEFAULT_SCORERS=[];
 
 let RESULTS=[],SCORERS=[],NEWS=[];
 
@@ -521,7 +516,10 @@ async function doSyncNews(){
     el.innerHTML='<div style="color:var(--dim);text-align:center;padding:2rem;grid-column:1/-1;">Não foi possível carregar as notícias agora. <a href="https://ge.globo.com/futebol/copa-do-mundo/" target="_blank" style="color:var(--gold);">Abrir ge.globo →</a></div>';
     return;
   }
-  NEWS=all.slice(0,30);
+  // Top 4 destaques do dia, sem duplicatas por título
+  const seen={};
+  const uniq=all.filter(n=>{const k=(n.title||'').trim().toLowerCase();if(seen[k])return false;seen[k]=1;return !!k;});
+  NEWS=uniq.slice(0,4);
   saveData();
   renderNews();
   showToast('✓ NOTÍCIAS ATUALIZADAS!');
@@ -600,17 +598,24 @@ function computeScorersFromMatches(){
 }
 
 function renderScorers(){
-  // Combina dados manuais e o cálculo automático dos gols nas partidas
+  // Artilharia 100% calculada a partir dos gols reais marcados nas partidas (status FT)
+  // Agrupa por nome normalizado para evitar duplicatas (Haaland aparecendo 2x, etc).
   const auto=computeScorersFromMatches();
-  const merged={};
-  auto.forEach(s=>{merged[s.n+'|'+s.t]={...s};});
-  SCORERS.forEach(s=>{
-    const k=s.n+'|'+s.t;
-    if(!merged[k]||s.g>merged[k].g) merged[k]={n:s.n,t:s.t,g:s.g};
+  const byName={};
+  auto.forEach(s=>{
+    const key=s.n.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'');
+    if(!byName[key]) byName[key]={n:s.n,t:s.t,g:0};
+    byName[key].g+=s.g;
   });
-  const sorted=Object.values(merged).sort((a,b)=>b.g-a.g||a.n.localeCompare(b.n));
-  if(sorted.length)document.getElementById('st-top').textContent=sorted[0].n+' ('+sorted[0].g+')';
-  document.getElementById('scorers-full').innerHTML=sorted.slice(0,10).map((s,i)=>`
+  const sorted=Object.values(byName).sort((a,b)=>b.g-a.g||a.n.localeCompare(b.n));
+  const el=document.getElementById('scorers-full');
+  if(!sorted.length){
+    document.getElementById('st-top').textContent='—';
+    el.innerHTML='<div style="color:var(--dim);text-align:center;padding:2rem;">Nenhum gol registrado ainda. A artilharia será calculada automaticamente a partir das partidas encerradas.</div>';
+    return;
+  }
+  document.getElementById('st-top').textContent=sorted[0].n+' ('+sorted[0].g+')';
+  el.innerHTML=sorted.slice(0,10).map((s,i)=>`
     <div class="scitem">
       <div class="scrank ${i===0?'scr1':''}">${i+1}</div>
       <div class="scinfo"><div class="scname">${s.n}</div><div class="scteam">${getFlagSm(s.t)}${s.t}</div></div>
@@ -776,7 +781,7 @@ function renderAll(){
   renderHoje();renderGroups();renderScorers();renderMataMata();renderCalendar();renderPainel();renderNews();
 }
 
-window.onload=()=>{loadData();renderAll();renderAdminPanel();};
+window.onload=()=>{loadData();renderAll();renderAdminPanel();if(!NEWS.length)doSyncNews();};
 </script>
 </body>
 </html>
