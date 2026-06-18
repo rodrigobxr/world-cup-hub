@@ -499,7 +499,7 @@ async function doSyncNews(){
     {src:'CBF',url:'https://www.cbf.com.br/rss/noticias'}
   ];
   const proxy='https://api.allorigins.win/raw?url=';
-  const all=[];
+  const all=[...curatedNews];
   for(const f of feeds){
     try{
       const r=await fetch(proxy+encodeURIComponent(f.url));
@@ -518,7 +518,6 @@ async function doSyncNews(){
       });
     }catch(e){console.warn('feed fail',f.src,e);}
   }
-  if(!all.length) all.push(...curatedNews);
   // Top 4 destaques do dia, sem duplicatas por título
   const seen={};
   const uniq=all.filter(n=>{const k=(n.title||'').trim().toLowerCase();if(seen[k])return false;seen[k]=1;return !!k;});
