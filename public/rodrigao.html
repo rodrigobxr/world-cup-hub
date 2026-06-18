@@ -163,9 +163,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
 
 <div class="topbar">
   <div class="brand">
-    <img src="logo-rodrigao.png" alt="Rodrigão — A Voz do Esporte">
+    <img id="brand-logo" src="logo-rodrigao.png" alt="Rodrigão — A Voz do Esporte" title="Clique para trocar a logo" style="cursor:pointer;" onclick="document.getElementById('logo-file').click()">
     <div class="brand-name">Rodrigão A Voz do Esporte</div>
     <div class="brand-tag">COPA DO MUNDO FIFA 2026</div>
+    <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="trocarLogo(event)">
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
     <a href="https://www.instagram.com/avozdoesporteoficial/" target="_blank" class="social-btn" style="background:linear-gradient(45deg,#833ab4,#fd1d1d,#fcb045);color:#fff;">
@@ -198,7 +199,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
 <nav class="sidebar">
   <div>
     <div class="profile">
-      <div class="avatar-wrap"><img src="logo-rodrigao.png" alt="Rodrigão"></div>
+      <div class="avatar-wrap"><img id="sidebar-logo" src="logo-rodrigao.png" alt="Rodrigão"></div>
       <div class="pname">RODRIGÃO</div>
       <div class="phandle">A VOZ DO ESPORTE OFICIAL</div>
     </div>
@@ -817,6 +818,9 @@ function renderAll(){
   renderHoje();renderGroups();renderScorers();renderMataMata();renderCalendar();renderPainel();renderNews();
 }
 
+function aplicarLogoSalva(){try{const d=localStorage.getItem('rodrigao_logo');if(d){document.getElementById('brand-logo').src=d;const s=document.getElementById('sidebar-logo');if(s)s.src=d;}}catch(e){}}
+function trocarLogo(ev){const f=ev.target.files&&ev.target.files[0];if(!f)return;if(!f.type.startsWith('image/')){alert('Selecione um arquivo de imagem.');return;}if(f.size>3*1024*1024){alert('Imagem muito grande (máx. 3MB).');return;}const r=new FileReader();r.onload=e=>{const d=e.target.result;try{localStorage.setItem('rodrigao_logo',d);}catch(_){alert('Não foi possível salvar (storage cheio).');return;}document.getElementById('brand-logo').src=d;const s=document.getElementById('sidebar-logo');if(s)s.src=d;alert('Logo atualizada! (salva apenas neste navegador)');};r.readAsDataURL(f);}
+aplicarLogoSalva();
 window.onload=()=>{loadData();renderAll();renderAdminPanel();if(!NEWS.length)doSyncNews();};
 </script>
 </body>
