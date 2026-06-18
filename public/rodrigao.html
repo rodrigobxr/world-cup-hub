@@ -516,7 +516,10 @@ async function doSyncNews(){
     el.innerHTML='<div style="color:var(--dim);text-align:center;padding:2rem;grid-column:1/-1;">Não foi possível carregar as notícias agora. <a href="https://ge.globo.com/futebol/copa-do-mundo/" target="_blank" style="color:var(--gold);">Abrir ge.globo →</a></div>';
     return;
   }
-  NEWS=all.slice(0,30);
+  // Top 4 destaques do dia, sem duplicatas por título
+  const seen={};
+  const uniq=all.filter(n=>{const k=(n.title||'').trim().toLowerCase();if(seen[k])return false;seen[k]=1;return !!k;});
+  NEWS=uniq.slice(0,4);
   saveData();
   renderNews();
   showToast('✓ NOTÍCIAS ATUALIZADAS!');
