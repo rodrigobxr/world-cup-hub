@@ -297,7 +297,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
 </div>
 
 <script>
-const STORAGE_KEY = 'rodrigao_wc2026_v2';
+const STORAGE_KEY = 'rodrigao_wc2026_v3';
 
 function getTodayStr() {
   const d = new Date();
@@ -326,16 +326,16 @@ const DEFAULT_MATCHES=[
   {id:9,d:'14/06',g:'E',h:'Alemanha',a:'Curaçao',hs:7,as:1,status:'FT',time:'FIM',goals:{h:["Havertz 5'","Müller 18'","Gnabry 29'","Fullkrug 45'","Havertz 61'","Gnabry 74'","Sane 88'"],a:["Kluivert 80'"]}},
   {id:10,d:'14/06',g:'F',h:'Holanda',a:'Japão',hs:2,as:2,status:'FT',time:'FIM',goals:{h:["Gakpo 15'","Depay 44'"],a:["Doan 55'","Asano 79'"]}},
   {id:11,d:'14/06',g:'E',h:'Costa do Marfim',a:'Equador',hs:1,as:0,status:'FT',time:'FIM',goals:{h:["Haller 38'"],a:[]}},
-  {id:12,d:'14/06',g:'F',h:'Suécia',a:'Tunísia',hs:5,as:1,status:'FT',time:'FIM',goals:{h:["Gyokeres 12'","Ibrahimovic 30'","Gyokeres 44'","Forsberg 62'","Isak 87'"],a:["Msakni 51'"]}},
+  {id:12,d:'14/06',g:'F',h:'Suécia',a:'Tunísia',hs:5,as:1,status:'FT',time:'FIM',goals:{h:["Ayari 7'","Isak 30'","Gyökeres 59'","Svanberg 84'","Ayari 90+6'"],a:["Omar Rekik 43'"]}},
   {id:13,d:'15/06',g:'H',h:'Espanha',a:'Cabo Verde',hs:0,as:0,status:'FT',time:'FIM',goals:{h:[],a:[]}},
   {id:14,d:'15/06',g:'G',h:'Bélgica',a:'Egito',hs:1,as:1,status:'FT',time:'FIM',goals:{h:["Lukaku 34'"],a:["Salah 78'"]}},
   {id:15,d:'15/06',g:'H',h:'Arábia Saudita',a:'Uruguai',hs:1,as:1,status:'FT',time:'FIM',goals:{h:["Al Dawsari 53'"],a:["Nunez 20'"]}},
   {id:16,d:'15/06',g:'G',h:'Irã',a:'Nova Zelândia',hs:2,as:2,status:'FT',time:'FIM',goals:{h:["Taremi 25'","Azmoun 67'"],a:["Wood 40'","Payne 80'"]}},
   {id:17,d:'16/06',g:'I',h:'França',a:'Senegal',hs:3,as:1,status:'FT',time:'FIM',goals:{h:["Mbappe 11'","Mbappe 45'","Griezmann 73'"],a:["Diallo 60'"]}},
-  {id:18,d:'16/06',g:'I',h:'Iraque',a:'Noruega',hs:1,as:4,status:'FT',time:'FIM',goals:{h:["Mohanad 35'"],a:["Haaland 7'","Haaland 22'","Odegaard 55'","Haaland 90'"]}},
-  {id:19,d:'16/06',g:'J',h:'Argentina',a:'Argélia',hs:3,as:0,status:'FT',time:'FIM',goals:{h:["Messi 14'","Lautaro 48'","Messi 77'"],a:[]}},
+  {id:18,d:'16/06',g:'I',h:'Iraque',a:'Noruega',hs:1,as:4,status:'FT',time:'FIM',goals:{h:["Aymen Hussein 39'"],a:["Haaland 28'","Haaland 42'","Østigård 87'","Aymen Hussein (contra) 90+2'"]}},
+  {id:19,d:'16/06',g:'J',h:'Argentina',a:'Argélia',hs:3,as:0,status:'FT',time:'FIM',goals:{h:["Messi 17'","Messi 60'","Messi 76'"],a:[]}},
   {id:20,d:'17/06',g:'J',h:'Áustria',a:'Jordânia',hs:2,as:0,status:'FT',time:'FIM',goals:{h:["Arnautovic 23'","Sabitzer 61'"],a:[]}},
-  {id:21,d:'17/06',g:'K',h:'Portugal',a:'RD Congo',hs:1,as:1,status:'FT',time:'FIM',goals:{h:["Cristiano 31'"],a:["Bongondjo 74'"]}},
+  {id:21,d:'17/06',g:'K',h:'Portugal',a:'RD Congo',hs:1,as:1,status:'FT',time:'FIM',goals:{h:["João Neves 6'"],a:["Yoane Wissa 45+5'"]}},
   {id:22,d:'17/06',g:'L',h:'Inglaterra',a:'Croácia',hs:4,as:2,status:'FT',time:'FIM',goals:{h:["Bellingham 18'","Kane 34'","Saka 55'","Kane 78'"],a:["Modric 40'","Kramaric 67'"]}},
   {id:23,d:'17/06',g:'L',h:'Gana',a:'Panamá',hs:'',as:'',status:'NS',time:'20h'},
   {id:24,d:'17/06',g:'K',h:'Uzbequistão',a:'Colômbia',hs:'',as:'',status:'NS',time:'23h'},
@@ -487,13 +487,19 @@ async function doSync(){
 async function doSyncNews(){
   const el=document.getElementById('news-container');
   el.innerHTML='<div style="color:var(--dim);text-align:center;padding:2rem;grid-column:1/-1;">Buscando notícias da Copa 2026...</div>';
+  const curatedNews=[
+    {title:'Messi faz hat-trick, chega a marca histórica e vira destaque da rodada',summary:'Craque argentino marcou três vezes contra a Argélia; informação confrontada em ge, FIFA e veículos nacionais.',source:'ge.globo / FIFA',url:'https://ge.globo.com/futebol/copa-do-mundo/noticia/2026/06/17/messi-festeja-vitoria-da-argentina-e-recorde.ghtml'},
+    {title:'Haaland marca duas vezes na estreia da Noruega contra o Iraque',summary:'Relatos de FIFA, ESPN e Estadão confirmam dois gols de Haaland, não três, na vitória norueguesa por 4 a 1.',source:'FIFA / ESPN / Estadão',url:'https://www.fifa.com/pt/articles/iraque-noruega-melhores-momentos-resumo-grupo-i'},
+    {title:'Portugal empata com a RD Congo; João Neves e Wissa fazem os gols',summary:'Cristiano Ronaldo teve atuação apagada; o gol português foi de João Neves, confirmado por FIFA, ESPN e O Globo.',source:'FIFA / ESPN / O Globo',url:'https://www.espn.com/soccer/match/_/gameId/760435/congo-dr-portugal'},
+    {title:'Suécia goleia a Tunísia; Ayari, Isak, Gyökeres e Svanberg marcam',summary:'A súmula confrontada indica dois gols de Yasin Ayari e não registra gol de Ibrahimović, já aposentado.',source:'FIFA / ESPN / Sky Sports',url:'https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/sweden-tunisia-highlights-match-report'}
+  ];
   const feeds=[
     {src:'ge.globo',url:'https://ge.globo.com/futebol/copa-do-mundo/rss.xml'},
     {src:'ESPN Brasil',url:'https://www.espn.com.br/espn/rss/futebol/news'},
     {src:'CBF',url:'https://www.cbf.com.br/rss/noticias'}
   ];
   const proxy='https://api.allorigins.win/raw?url=';
-  const all=[];
+  const all=[...curatedNews];
   for(const f of feeds){
     try{
       const r=await fetch(proxy+encodeURIComponent(f.url));
@@ -511,10 +517,6 @@ async function doSyncNews(){
         }
       });
     }catch(e){console.warn('feed fail',f.src,e);}
-  }
-  if(!all.length){
-    el.innerHTML='<div style="color:var(--dim);text-align:center;padding:2rem;grid-column:1/-1;">Não foi possível carregar as notícias agora. <a href="https://ge.globo.com/futebol/copa-do-mundo/" target="_blank" style="color:var(--gold);">Abrir ge.globo →</a></div>';
-    return;
   }
   // Top 4 destaques do dia, sem duplicatas por título
   const seen={};
@@ -582,12 +584,14 @@ function computeScorersFromMatches(){
   RESULTS.forEach(m=>{
     if(m.status!=='FT'||!m.goals) return;
     (m.goals.h||[]).forEach(g=>{
+      if(/contra|own goal|og/i.test(String(g))) return;
       const name=String(g).replace(/\s*\d+'.*$/,'').replace(/\(.*?\)/g,'').trim();
       if(!name||/^og$|gol contra/i.test(name)) return;
       const k=name+'|'+m.h;
       tally[k]=tally[k]||{n:name,t:m.h,g:0};tally[k].g++;
     });
     (m.goals.a||[]).forEach(g=>{
+      if(/contra|own goal|og/i.test(String(g))) return;
       const name=String(g).replace(/\s*\d+'.*$/,'').replace(/\(.*?\)/g,'').trim();
       if(!name||/^og$|gol contra/i.test(name)) return;
       const k=name+'|'+m.a;
