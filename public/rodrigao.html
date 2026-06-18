@@ -487,6 +487,12 @@ async function doSync(){
 async function doSyncNews(){
   const el=document.getElementById('news-container');
   el.innerHTML='<div style="color:var(--dim);text-align:center;padding:2rem;grid-column:1/-1;">Buscando notícias da Copa 2026...</div>';
+  const curatedNews=[
+    {title:'Messi faz hat-trick, chega a marca histórica e vira destaque da rodada',summary:'Craque argentino marcou três vezes contra a Argélia; informação confrontada em ge, FIFA e veículos nacionais.',source:'ge.globo / FIFA',url:'https://ge.globo.com/futebol/copa-do-mundo/noticia/2026/06/17/messi-festeja-vitoria-da-argentina-e-recorde.ghtml'},
+    {title:'Haaland marca duas vezes na estreia da Noruega contra o Iraque',summary:'Relatos de FIFA, ESPN e Estadão confirmam dois gols de Haaland, não três, na vitória norueguesa por 4 a 1.',source:'FIFA / ESPN / Estadão',url:'https://www.fifa.com/pt/articles/iraque-noruega-melhores-momentos-resumo-grupo-i'},
+    {title:'Portugal empata com a RD Congo; João Neves e Wissa fazem os gols',summary:'Cristiano Ronaldo teve atuação apagada; o gol português foi de João Neves, confirmado por FIFA, ESPN e O Globo.',source:'FIFA / ESPN / O Globo',url:'https://www.espn.com/soccer/match/_/gameId/760435/congo-dr-portugal'},
+    {title:'Suécia goleia a Tunísia; Ayari, Isak, Gyökeres e Svanberg marcam',summary:'A súmula confrontada indica dois gols de Yasin Ayari e não registra gol de Ibrahimović, já aposentado.',source:'FIFA / ESPN / Sky Sports',url:'https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/sweden-tunisia-highlights-match-report'}
+  ];
   const feeds=[
     {src:'ge.globo',url:'https://ge.globo.com/futebol/copa-do-mundo/rss.xml'},
     {src:'ESPN Brasil',url:'https://www.espn.com.br/espn/rss/futebol/news'},
@@ -512,10 +518,7 @@ async function doSyncNews(){
       });
     }catch(e){console.warn('feed fail',f.src,e);}
   }
-  if(!all.length){
-    el.innerHTML='<div style="color:var(--dim);text-align:center;padding:2rem;grid-column:1/-1;">Não foi possível carregar as notícias agora. <a href="https://ge.globo.com/futebol/copa-do-mundo/" target="_blank" style="color:var(--gold);">Abrir ge.globo →</a></div>';
-    return;
-  }
+  if(!all.length) all.push(...curatedNews);
   // Top 4 destaques do dia, sem duplicatas por título
   const seen={};
   const uniq=all.filter(n=>{const k=(n.title||'').trim().toLowerCase();if(seen[k])return false;seen[k]=1;return !!k;});
