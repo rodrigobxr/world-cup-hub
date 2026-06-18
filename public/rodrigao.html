@@ -163,9 +163,10 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
 
 <div class="topbar">
   <div class="brand">
-    <img src="logo-rodrigao.png" alt="Rodrigão — A Voz do Esporte">
+    <img id="brand-logo" src="logo-rodrigao.png" alt="Rodrigão — A Voz do Esporte" title="Clique para trocar a logo" style="cursor:pointer;" onclick="document.getElementById('logo-file').click()">
     <div class="brand-name">Rodrigão A Voz do Esporte</div>
     <div class="brand-tag">COPA DO MUNDO FIFA 2026</div>
+    <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="trocarLogo(event)">
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
     <a href="https://www.instagram.com/avozdoesporteoficial/" target="_blank" class="social-btn" style="background:linear-gradient(45deg,#833ab4,#fd1d1d,#fcb045);color:#fff;">
