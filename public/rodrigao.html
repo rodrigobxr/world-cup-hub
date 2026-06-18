@@ -20,13 +20,21 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
 @keyframes spin { 0%{transform:rotate(0deg)}100%{transform:rotate(360deg)} }
 .loading-text { font-size: 15px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
 .loading-subtext { font-size: 11px; color: var(--muted); margin-top: 8px; }
-.topbar { background: #0A0A0A; border-bottom: 1px solid var(--border); padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 54px; position: sticky; top:0; z-index:100; }
-.logo { font-size: 17px; font-weight: 900; letter-spacing: -0.5px; color: var(--gold); }
-.badge { font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 4px; }
+.topbar { background: #0A0A0A; border-bottom: 1px solid var(--border); padding: .5rem 1rem; display: flex; align-items: center; justify-content: space-between; gap: 10px; position: sticky; top:0; z-index:100; }
+.brand { display: flex; flex-direction: column; align-items: center; line-height: 1; flex-shrink: 0; }
+.brand img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; display:block; border: 1px solid var(--border-gold); }
+.brand-tag { font-size: 9px; font-weight: 800; letter-spacing: 1px; color: var(--gold); margin-top: 4px; text-align:center; white-space: nowrap; }
+.logo { display:none; }
+.badge { display:none; font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 4px; }
 .bg { background: rgba(245,200,66,.12); color: var(--gold); border: 1px solid var(--border-gold); }
 .bo { background: transparent; color: var(--muted); border: 1px solid var(--border); }
 .social-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 20px; text-decoration: none; transition: opacity .2s; }
 .social-btn:hover { opacity: .85; }
+.mobile-nav { display: none; background: #0A0A0A; border-bottom: 1px solid var(--border-gold); padding: 8px 10px; gap: 6px; overflow-x: auto; position: sticky; top: 80px; z-index: 99; -webkit-overflow-scrolling: touch; }
+.mobile-nav::-webkit-scrollbar { height: 4px; }
+.mobile-nav::-webkit-scrollbar-thumb { background: var(--border-gold); border-radius: 4px; }
+.mobile-nav button { flex-shrink: 0; background: #141414; color: var(--muted); border: 1px solid var(--border); border-radius: 20px; padding: 7px 13px; font-size: 11px; font-weight: 800; cursor: pointer; white-space: nowrap; letter-spacing: .3px; }
+.mobile-nav button.active { background: var(--gold); color: #000; border-color: var(--gold); }
 .main { display: flex; min-height: calc(100vh - 54px); }
 .sidebar { width: 240px; min-width: 240px; background: #0A0A0A; border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; }
 .profile { padding: 1.25rem; border-bottom: 1px solid var(--border); }
@@ -135,7 +143,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
 .btn-save:hover { background: var(--gold); color: #000; }
 .admin-section-title { color: #FFF; font-size: 16px; font-weight: 900; margin: 25px 0 15px; border-bottom: 1px solid var(--border); padding-bottom: 8px; text-transform: uppercase; }
 @keyframes slideIn { from{transform:translateY(100px);opacity:0}to{transform:translateY(0);opacity:1} }
-@media(max-width:980px){.sidebar{display:none}.sg{grid-template-columns:repeat(2,1fr)}.tc{grid-template-columns:1fr}.gg{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:980px){.sidebar{display:none}.sg{grid-template-columns:repeat(2,1fr)}.tc{grid-template-columns:1fr}.gg{grid-template-columns:repeat(2,1fr)}.mobile-nav{display:flex}.social-btn span:not(#music-icon){display:none}.social-btn{padding:8px 10px}.content{padding:1rem}.brand img{width:42px;height:42px}.brand-tag{font-size:8px}}
 </style>
 </head>
 <body>
@@ -147,9 +155,9 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
 </div>
 
 <div class="topbar">
-  <div style="display:flex;align-items:center;gap:.75rem;">
-    <div class="logo">RODRIGÃO</div>
-    <span class="badge bg">COPA DO MUNDO 2026</span>
+  <div class="brand">
+    <img src="logo-rodrigao.png" alt="Rodrigão — A Voz do Esporte">
+    <div class="brand-tag">COPA DO MUNDO 2026</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
     <a href="https://www.instagram.com/avozdoesporteoficial/" target="_blank" class="social-btn" style="background:linear-gradient(45deg,#833ab4,#fd1d1d,#fcb045);color:#fff;">
@@ -167,11 +175,22 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
   </div>
 </div>
 
+<nav class="mobile-nav" id="mobileNav">
+  <button data-mn="hoje" class="active" onclick="nav('hoje')">📅 HOJE</button>
+  <button data-mn="painel" onclick="nav('painel')">⬡ VISÃO GERAL</button>
+  <button data-mn="matamata" onclick="nav('matamata')">🏆 MATA-MATA</button>
+  <button data-mn="jogos" onclick="nav('jogos')">▶ CALENDÁRIO</button>
+  <button data-mn="grupos" onclick="nav('grupos')">◈ GRUPOS</button>
+  <button data-mn="artilharia" onclick="nav('artilharia')">⚽ ARTILHARIA</button>
+  <button data-mn="noticias" onclick="nav('noticias')">📰 NOTÍCIAS</button>
+  <button data-mn="api" onclick="nav('api')">⚙️ AJUSTE</button>
+</nav>
+
 <div class="main">
 <nav class="sidebar">
   <div>
     <div class="profile">
-      <div class="avatar-wrap"><img src="https://media.base44.com/images/public/6a30392a4b5ee36ad86c26b3/208d52bdf_perfil.png" alt="Rodrigão" onerror="this.parentElement.innerHTML='<div style=\'display:flex;align-items:center;justify-content:center;height:100%;font-size:22px;font-weight:900;color:#F5C842;\'>R</div>'"></div>
+      <div class="avatar-wrap"><img src="logo-rodrigao.png" alt="Rodrigão"></div>
       <div class="pname">RODRIGÃO</div>
       <div class="phandle">A VOZ DO ESPORTE OFICIAL</div>
     </div>
@@ -463,6 +482,11 @@ function nav(id){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   const p=document.getElementById('panel-'+id);if(p)p.classList.add('active');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.mobile-nav button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.mn===id);
+    if(b.dataset.mn===id) b.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 function showToast(msg,ok=true){
