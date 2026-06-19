@@ -16,6 +16,8 @@ const EN_TO_PT: Record<string, string> = {
   Canada: 'Canadá',
   'Bosnia and Herzegovina': 'Bósnia',
   'Bosnia & Herzegovina': 'Bósnia',
+  'Bosnia-Herzegovina': 'Bósnia',
+
   Qatar: 'Catar',
   Switzerland: 'Suíça',
   Brazil: 'Brasil',
