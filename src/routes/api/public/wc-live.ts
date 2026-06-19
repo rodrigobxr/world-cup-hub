@@ -1,9 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-// TheSportsDB - free tier, no API key required (use key "3" for public access)
-// FIFA World Cup league id no TheSportsDB = 4429 ("Soccer World Cup")
-const TSDB_KEY = '3'
-const WC_LEAGUE_ID = '4429'
+const ESPN_SCOREBOARD_URL =
+  'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?dates=20260611-20260719&limit=200'
 
 // Mapa de nomes (EN -> PT-BR) - mesmas 48 seleções da Copa 2026
 const EN_TO_PT: Record<string, string> = {
@@ -71,28 +69,94 @@ const EN_TO_PT: Record<string, string> = {
 
 const ptName = (en: string) => EN_TO_PT[en] ?? en
 
+const jsonHeaders = {
+  'Cache-Control': 'public, max-age=30',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin',
+}
+
 type Cached = { at: number; payload: unknown }
 let cache: Cached | null = null
 const TTL_MS = 60_000
 
-type TsdbEvent = {
-  idEvent: string
-  strEvent?: string
-  strHomeTeam: string
-  strAwayTeam: string
-  intHomeScore: string | null
-  intAwayScore: string | null
-  dateEvent: string // YYYY-MM-DD
-  strTime?: string // HH:MM:SS UTC
-  strTimestamp?: string // ISO UTC
-  strStatus?: string
-  strProgress?: string
-  postponed?: string
+type EspnCompetitor = {
+  homeAway: 'home' | 'away'
+  score?: string
+  team: { id: string; displayName: string; shortDisplayName?: string }
 }
 
-const LIVE_STATUSES = new Set([
-  '1H', '2H', 'HT', 'ET', 'IN_PLAY', 'In Play', 'Playing',
-])
+type EspnDetail = {
+  scoringPlay?: boolean
+  ownGoal?: boolean
+  penaltyKick?: boolean
+  shootout?: boolean
+  clock?: { displayValue?: string }
+  team?: { id: string }
+  athletesInvolved?: { displayName?: string; shortName?: string; team?: { id: string } }[]
+}
+
+type EspnEvent = {
+  id: string
+  date: string
+  competitions: {
+    competitors: EspnCompetitor[]
+    status: { type: { state?: string; completed?: boolean; name?: string; shortDetail?: string; detail?: string } }
+    details?: EspnDetail[]
+  }[]
+}
+
+function toBrasiliaDateTime(iso: string) {
+  const utc = new Date(iso)
+  const brt = new Date(utc.getTime() - 3 * 3600_000)
+  const dd = String(brt.getUTCDate()).padStart(2, '0')
+  const mm = String(brt.getUTCMonth() + 1).padStart(2, '0')
+  const hh = String(brt.getUTCHours()).padStart(2, '0')
+  const mi = String(brt.getUTCMinutes()).padStart(2, '0')
+  return { d: `${dd}/${mm}`, time: `${hh}h${mi === '00' ? '' : mi}` }
+}
+
+function formatGoal(detail: EspnDetail) {
+  const athlete = detail.athletesInvolved?.[0]
+  const name = athlete?.displayName || athlete?.shortName || 'Gol'
+  const minute = detail.clock?.displayValue ? ` ${detail.clock.displayValue}` : ''
+  const suffix = detail.ownGoal ? ' (contra)' : detail.penaltyKick ? ' (pên.)' : ''
+  return `${name}${suffix}${minute}`.trim()
+}
+
+function convertEspnEvent(event: EspnEvent) {
+  const competition = event.competitions?.[0]
+  const home = competition?.competitors?.find((c) => c.homeAway === 'home')
+  const away = competition?.competitors?.find((c) => c.homeAway === 'away')
+  if (!competition || !home || !away) return null
+
+  const { d, time } = toBrasiliaDateTime(event.date)
+  const state = competition.status?.type?.state
+  const completed = competition.status?.type?.completed || state === 'post'
+  const status = completed ? 'FT' : state === 'in' ? 'LIVE' : 'NS'
+  const goals = { h: [] as string[], a: [] as string[] }
+
+  ;(competition.details ?? [])
+    .filter((detail) => detail.scoringPlay && !detail.shootout)
+    .forEach((detail) => {
+      const scoringTeamId = detail.team?.id
+      const goal = formatGoal(detail)
+      if (scoringTeamId === home.team.id) goals.h.push(goal)
+      else if (scoringTeamId === away.team.id) goals.a.push(goal)
+    })
+
+  return {
+    id: event.id,
+    d,
+    time: completed ? 'FIM' : status === 'LIVE' ? (competition.status?.type?.shortDetail || 'AO VIVO') : time,
+    status,
+    h: ptName(home.team.displayName),
+    a: ptName(away.team.displayName),
+    hs: home.score !== undefined && home.score !== '' ? Number(home.score) : '',
+    as: away.score !== undefined && away.score !== '' ? Number(away.score) : '',
+    goals,
+  }
+}
 
 export const Route = createFileRoute('/api/public/wc-live')({
   server: {
