@@ -161,116 +161,49 @@ function convertEspnEvent(event: EspnEvent) {
 export const Route = createFileRoute('/api/public/wc-live')({
   server: {
     handlers: {
+      OPTIONS: async () => new Response(null, { status: 204, headers: jsonHeaders }),
       GET: async ({ request }) => {
         const url = new URL(request.url)
         const debug = url.searchParams.get('debug') === '1'
-        const seasonParam = url.searchParams.get('season') ?? '2026'
-
-        if (debug) {
-          // Descobre se a liga 4429 tem dados desta temporada
-          const r = await fetch(
-            `https://www.thesportsdb.com/api/v1/json/${TSDB_KEY}/eventsseason.php?id=${WC_LEAGUE_ID}&s=${seasonParam}`,
-          )
-          const data = await r.json()
-          return Response.json({
-            ok: r.ok,
-            httpStatus: r.status,
-            league: WC_LEAGUE_ID,
-            season: seasonParam,
-            eventCount: data.events?.length ?? 0,
-            sample: data.events?.slice(0, 3) ?? null,
-            raw: data.events ? undefined : data,
-          })
-        }
 
         const now = Date.now()
-        if (cache && now - cache.at < TTL_MS) {
+        if (!debug && cache && now - cache.at < TTL_MS) {
           return Response.json(cache.payload, {
-            headers: { 'Cache-Control': 'public, max-age=30', 'X-Cache': 'HIT' },
+            headers: { ...jsonHeaders, 'X-Cache': 'HIT' },
           })
         }
 
         try {
-          // 1) Pega todas as partidas da temporada
-          const seasonRes = await fetch(
-            `https://www.thesportsdb.com/api/v1/json/${TSDB_KEY}/eventsseason.php?id=${WC_LEAGUE_ID}&s=${seasonParam}`,
-          )
-          const seasonData: { events?: TsdbEvent[] | null } = await seasonRes.json()
-          const events: TsdbEvent[] = seasonData.events ?? []
-
-          // 2) Pega jogos AO VIVO globais (livescore) para sobrescrever status/placar em tempo real
-          let liveEvents: TsdbEvent[] = []
-          try {
-            const liveRes = await fetch(
-              `https://www.thesportsdb.com/api/v2/json/livescore/soccer`,
-              { headers: { 'X-API-KEY': TSDB_KEY } },
-            )
-            if (liveRes.ok) {
-              const liveData: { livescore?: TsdbEvent[] | null } = await liveRes.json()
-              liveEvents = (liveData.livescore ?? []).filter(
-                (e: any) => e.idLeague === WC_LEAGUE_ID || e.strLeague === 'Soccer World Cup',
-              )
-            }
-          } catch {
-            // tier free pode não ter livescore — segue só com eventsseason
-          }
-
-          const liveById = new Map<string, TsdbEvent>()
-          liveEvents.forEach((e) => liveById.set(e.idEvent, e))
-
-          const matches = events.map((e) => {
-            const live = liveById.get(e.idEvent)
-            const src = live ?? e
-            const status = (src.strStatus ?? src.strProgress ?? '').trim()
-
-            // Data UTC -> Brasília (UTC-3)
-            const ts = src.strTimestamp
-              ? new Date(src.strTimestamp)
-              : new Date(`${src.dateEvent}T${src.strTime ?? '00:00:00'}Z`)
-            const brt = new Date(ts.getTime() - 3 * 3600_000)
-            const dd = String(brt.getUTCDate()).padStart(2, '0')
-            const mm = String(brt.getUTCMonth() + 1).padStart(2, '0')
-            const hh = String(brt.getUTCHours()).padStart(2, '0')
-            const mi = String(brt.getUTCMinutes()).padStart(2, '0')
-
-            const hs = src.intHomeScore
-            const as_ = src.intAwayScore
-            const hasScore = hs !== null && hs !== '' && as_ !== null && as_ !== ''
-            const isLive = !!live || LIVE_STATUSES.has(status)
-            const isDone =
-              status === 'Match Finished' ||
-              status === 'FT' ||
-              status === 'Finished' ||
-              (!isLive && hasScore && !!e.dateEvent && new Date(e.dateEvent) < new Date())
-
-            return {
-              id: e.idEvent,
-              d: `${dd}/${mm}`,
-              time: isDone ? 'FIM' : isLive ? (status || 'AO VIVO') : `${hh}h${mi === '00' ? '' : mi}`,
-              status: isDone ? 'FT' : isLive ? 'LIVE' : 'NS',
-              h: ptName(e.strHomeTeam),
-              a: ptName(e.strAwayTeam),
-              hs: hasScore ? Number(hs) : '',
-              as: hasScore ? Number(as_) : '',
-            }
+          const espnRes = await fetch(ESPN_SCOREBOARD_URL, {
+            headers: { Accept: 'application/json', 'User-Agent': 'RodrigaoCopa/1.0' },
           })
+          if (!espnRes.ok) throw new Error(`ESPN HTTP ${espnRes.status}`)
+
+          const espnData: { events?: EspnEvent[]; leagues?: unknown[] } = await espnRes.json()
+          const matches = (espnData.events ?? []).map(convertEspnEvent).filter(Boolean)
 
           const payload = {
             updatedAt: new Date().toISOString(),
-            source: 'TheSportsDB',
-            league: WC_LEAGUE_ID,
-            season: seasonParam,
+            source: 'ESPN public scoreboard',
+            league: 'fifa.world',
+            season: '2026',
             count: matches.length,
             matches,
           }
-          cache = { at: now, payload }
+          if (!debug) cache = { at: now, payload }
+          if (debug) {
+            return Response.json(
+              { ok: true, httpStatus: espnRes.status, eventCount: matches.length, sample: matches.slice(0, 5) },
+              { headers: { ...jsonHeaders, 'X-Cache': 'BYPASS' } },
+            )
+          }
           return Response.json(payload, {
-            headers: { 'Cache-Control': 'public, max-age=30', 'X-Cache': 'MISS' },
+            headers: { ...jsonHeaders, 'X-Cache': 'MISS' },
           })
         } catch (e: any) {
           return Response.json(
-            { error: 'Falha ao consultar TheSportsDB', detail: String(e?.message ?? e) },
-            { status: 500 },
+            { error: 'Falha ao consultar ESPN pública', detail: String(e?.message ?? e) },
+            { status: 500, headers: jsonHeaders },
           )
         }
       },
