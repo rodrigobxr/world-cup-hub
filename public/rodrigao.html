@@ -177,7 +177,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
 
 <div class="topbar">
   <div class="brand">
-    <img id="brand-logo" src="logo-rodrigao.png" alt="Rodrigão — A Voz do Esporte" title="Clique para trocar a logo" style="cursor:pointer;" onclick="document.getElementById('logo-file').click()">
+    <img id="brand-logo" src="logo-rodrigao.png" alt="Rodrigão — A Voz do Esporte" title="Clique no ⚙ para trocar / ajustar">
+    <button class="logo-gear" type="button" onclick="abrirAjustesLogo()" title="Trocar / ajustar logo">⚙</button>
     <div class="brand-name">Rodrigão A Voz do Esporte</div>
     <div class="brand-tag">COPA DO MUNDO FIFA 2026</div>
     <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="trocarLogo(event)">
