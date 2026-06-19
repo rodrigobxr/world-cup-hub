@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicWcNewsRouteImport } from './routes/api/public/wc-news'
 import { Route as ApiPublicWcLiveRouteImport } from './routes/api/public/wc-live'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicWcNewsRoute = ApiPublicWcNewsRouteImport.update({
+  id: '/api/public/wc-news',
+  path: '/api/public/wc-news',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicWcLiveRoute = ApiPublicWcLiveRouteImport.update({
@@ -26,27 +32,31 @@ const ApiPublicWcLiveRoute = ApiPublicWcLiveRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/public/wc-live': typeof ApiPublicWcLiveRoute
+  '/api/public/wc-news': typeof ApiPublicWcNewsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/public/wc-live': typeof ApiPublicWcLiveRoute
+  '/api/public/wc-news': typeof ApiPublicWcNewsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api/public/wc-live': typeof ApiPublicWcLiveRoute
+  '/api/public/wc-news': typeof ApiPublicWcNewsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/public/wc-live'
+  fullPaths: '/' | '/api/public/wc-live' | '/api/public/wc-news'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/public/wc-live'
-  id: '__root__' | '/' | '/api/public/wc-live'
+  to: '/' | '/api/public/wc-live' | '/api/public/wc-news'
+  id: '__root__' | '/' | '/api/public/wc-live' | '/api/public/wc-news'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiPublicWcLiveRoute: typeof ApiPublicWcLiveRoute
+  ApiPublicWcNewsRoute: typeof ApiPublicWcNewsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/wc-news': {
+      id: '/api/public/wc-news'
+      path: '/api/public/wc-news'
+      fullPath: '/api/public/wc-news'
+      preLoaderRoute: typeof ApiPublicWcNewsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/wc-live': {
@@ -71,6 +88,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiPublicWcLiveRoute: ApiPublicWcLiveRoute,
+  ApiPublicWcNewsRoute: ApiPublicWcNewsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
