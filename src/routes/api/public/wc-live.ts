@@ -166,9 +166,10 @@ export const Route = createFileRoute('/api/public/wc-live')({
       GET: async ({ request }) => {
         const url = new URL(request.url)
         const debug = url.searchParams.get('debug') === '1'
+        const force = url.searchParams.get('force') === '1'
 
         const now = Date.now()
-        if (!debug && cache && now - cache.at < TTL_MS) {
+        if (!force && !debug && cache && now - cache.at < TTL_MS) {
           return Response.json(cache.payload, {
             headers: { ...jsonHeaders, 'X-Cache': 'HIT' },
           })
