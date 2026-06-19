@@ -119,10 +119,13 @@ export const Route = createFileRoute('/api/public/wc-live')({
           })
         }
 
+        const league = leagueParam ?? '1'
+        const season = seasonParam ?? '2026'
+
         try {
           const r = await fetch(
-            'https://v3.football.api-sports.io/fixtures?league=1&season=2026',
-            { headers: { 'x-apisports-key': key } },
+            `https://v3.football.api-sports.io/fixtures?league=${league}&season=${season}`,
+            { headers },
           )
           if (!r.ok) {
             return Response.json(
@@ -132,6 +135,9 @@ export const Route = createFileRoute('/api/public/wc-live')({
           }
           const json: any = await r.json()
           const fixtures: any[] = json.response ?? []
+          const apiErrors = json.errors
+          const hasErrors = apiErrors && (Array.isArray(apiErrors) ? apiErrors.length : Object.keys(apiErrors).length)
+
 
           const matches = fixtures.map((f) => {
             const dt = new Date(f.fixture.date)
