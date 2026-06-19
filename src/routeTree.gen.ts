@@ -10,33 +10,43 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicWcLiveRouteImport } from './routes/api/public/wc-live'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWcLiveRoute = ApiPublicWcLiveRouteImport.update({
+  id: '/api/public/wc-live',
+  path: '/api/public/wc-live',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/wc-live': typeof ApiPublicWcLiveRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/wc-live': typeof ApiPublicWcLiveRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/wc-live': typeof ApiPublicWcLiveRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/api/public/wc-live'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/api/public/wc-live'
+  id: '__root__' | '/' | '/api/public/wc-live'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicWcLiveRoute: typeof ApiPublicWcLiveRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +58,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/wc-live': {
+      id: '/api/public/wc-live'
+      path: '/api/public/wc-live'
+      fullPath: '/api/public/wc-live'
+      preLoaderRoute: typeof ApiPublicWcLiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicWcLiveRoute: ApiPublicWcLiveRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
