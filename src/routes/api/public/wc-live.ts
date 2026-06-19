@@ -72,7 +72,7 @@ const TTL_MS = 60_000
 export const Route = createFileRoute('/api/public/wc-live')({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
         const key = process.env.API_FOOTBALL_KEY
         if (!key) {
           return Response.json(
@@ -80,6 +80,37 @@ export const Route = createFileRoute('/api/public/wc-live')({
             { status: 500 },
           )
         }
+
+        const url = new URL(request.url)
+        const debug = url.searchParams.get('debug') === '1'
+        const leagueParam = url.searchParams.get('league')
+        const seasonParam = url.searchParams.get('season')
+
+        const headers = { 'x-apisports-key': key }
+
+        if (debug) {
+          // Descobre quais ligas de Copa do Mundo estão disponíveis nessa chave
+          const [leaguesRes, statusRes] = await Promise.all([
+            fetch('https://v3.football.api-sports.io/leagues?search=world%20cup', { headers }),
+            fetch('https://v3.football.api-sports.io/status', { headers }),
+          ])
+          const leagues = await leaguesRes.json()
+          const status = await statusRes.json()
+          const simplified = (leagues.response ?? []).map((l: any) => ({
+            id: l.league?.id,
+            name: l.league?.name,
+            type: l.league?.type,
+            country: l.country?.name,
+            seasons: (l.seasons ?? []).map((s: any) => ({
+              year: s.year,
+              start: s.start,
+              end: s.end,
+              current: s.current,
+            })),
+          }))
+          return Response.json({ status: status.response, leagues: simplified })
+        }
+
 
         const now = Date.now()
         if (cache && now - cache.at < TTL_MS) {
