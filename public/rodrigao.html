@@ -27,8 +27,22 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
 .loading-text { font-size: 15px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
 .loading-subtext { font-size: 11px; color: var(--muted); margin-top: 8px; }
 .topbar { background: #0A0A0A; border-bottom: 1px solid var(--border); padding: .5rem 1rem; display: flex; align-items: center; justify-content: space-between; gap: 10px; position: sticky; top:0; z-index:100; }
-.brand { display: flex; flex-direction: column; align-items: center; line-height: 1; flex-shrink: 0; gap: 4px; }
-.brand img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; display:block; image-rendering: -webkit-optimize-contrast; }
+.brand { display: flex; flex-direction: column; align-items: center; line-height: 1; flex-shrink: 0; gap: 4px; position: relative; }
+.brand img, .avatar-wrap img { image-rendering: auto; -webkit-backface-visibility: hidden; backface-visibility: hidden; transform: translateZ(0); }
+.brand img { width: 56px; height: 56px; border-radius: 50%; object-fit: var(--logo-fit, cover); object-position: var(--logo-pos, 50% 50%); display:block; }
+.logo-gear { position:absolute; top:-4px; right:-4px; width:18px; height:18px; border-radius:50%; background:var(--gold); color:#000; border:none; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-weight:900; box-shadow:0 2px 6px rgba(0,0,0,.5); }
+.logo-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:10000; align-items:center; justify-content:center; padding:1rem; }
+.logo-modal.open { display:flex; }
+.logo-modal-box { background:#141414; border:1px solid var(--border-gold); border-radius:14px; padding:1.25rem; width:100%; max-width:360px; color:var(--text); display:flex; flex-direction:column; gap:.85rem; }
+.logo-modal h3 { font-size:13px; font-weight:900; color:var(--gold); letter-spacing:1px; text-transform:uppercase; }
+.logo-modal label { font-size:10px; font-weight:800; letter-spacing:1px; color:var(--muted); text-transform:uppercase; display:flex; justify-content:space-between; align-items:center; }
+.logo-modal input[type=range] { width:100%; accent-color: var(--gold); }
+.logo-modal .row { display:flex; gap:8px; }
+.logo-modal .row > * { flex:1; }
+.logo-modal select, .logo-modal button.btn { background:#0F0F0F; color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:12px; font-weight:700; cursor:pointer; }
+.logo-modal button.primary { background:var(--gold); color:#000; border:none; }
+.logo-preview { width:120px; height:120px; border-radius:50%; margin:0 auto; overflow:hidden; border:2px solid var(--gold); background:#000; }
+.logo-preview img { width:100%; height:100%; object-fit:var(--logo-fit,cover); object-position:var(--logo-pos,50% 50%); display:block; }
 .brand-name { font-size: 11px; font-weight: 800; letter-spacing: .3px; color: #fff; text-align:center; white-space: nowrap; }
 .brand-tag { font-size: 9px; font-weight: 800; letter-spacing: 1px; color: var(--gold); text-align:center; white-space: nowrap; }
 .logo { display:none; }
@@ -46,7 +60,7 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
 .sidebar { width: 240px; min-width: 240px; background: #0A0A0A; border-right: 1px solid var(--border); display: flex; flex-direction: column; justify-content: space-between; }
 .profile { padding: 1.25rem; border-bottom: 1px solid var(--border); }
 .avatar-wrap { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; border: 2px solid var(--gold); margin-bottom: .6rem; }
-.avatar-wrap img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-wrap img { width: 100%; height: 100%; object-fit: var(--logo-fit, cover); object-position: var(--logo-pos, 50% 50%); }
 .pname { font-size: 18px; font-weight: 900; color: var(--gold); }
 .phandle { font-size: 11px; color: var(--muted); }
 .nav { padding: .75rem 0; flex: 1; overflow-y: auto; }
@@ -163,7 +177,8 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
 
 <div class="topbar">
   <div class="brand">
-    <img id="brand-logo" src="logo-rodrigao.png" alt="Rodrigão — A Voz do Esporte" title="Clique para trocar a logo" style="cursor:pointer;" onclick="document.getElementById('logo-file').click()">
+    <img id="brand-logo" src="logo-rodrigao.png" alt="Rodrigão — A Voz do Esporte" title="Clique no ⚙ para trocar / ajustar">
+    <button class="logo-gear" type="button" onclick="abrirAjustesLogo()" title="Trocar / ajustar logo">⚙</button>
     <div class="brand-name">Rodrigão A Voz do Esporte</div>
     <div class="brand-tag">COPA DO MUNDO FIFA 2026</div>
     <input type="file" id="logo-file" accept="image/*" style="display:none" onchange="trocarLogo(event)">
@@ -181,6 +196,29 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
       <span id="music-icon">🔇</span>
       <span id="music-label">TORCIDA OFF</span>
     </button>
+  </div>
+</div>
+
+<div class="logo-modal" id="logo-modal" onclick="if(event.target===this)fecharAjustesLogo()">
+  <div class="logo-modal-box">
+    <h3>⚙ Ajustes da Logo</h3>
+    <div class="logo-preview"><img id="logo-preview-img" src="logo-rodrigao.png" alt=""></div>
+    <button class="btn primary" type="button" onclick="document.getElementById('logo-file').click()">📁 Escolher nova imagem</button>
+    <label>Ajuste <span id="lg-fit-val">Preencher</span>
+      <select id="lg-fit" onchange="atualizarAjustes()" style="margin-left:8px;">
+        <option value="cover">Preencher (cortar)</option>
+        <option value="contain">Ajustar (sem cortar)</option>
+      </select>
+    </label>
+    <label>Posição horizontal <span id="lg-x-val">50%</span></label>
+    <input type="range" id="lg-x" min="0" max="100" value="50" oninput="atualizarAjustes()">
+    <label>Posição vertical <span id="lg-y-val">50%</span></label>
+    <input type="range" id="lg-y" min="0" max="100" value="50" oninput="atualizarAjustes()">
+    <div class="row">
+      <button class="btn" type="button" onclick="resetarLogo()">↺ Resetar</button>
+      <button class="btn primary" type="button" onclick="fecharAjustesLogo()">✓ Fechar</button>
+    </div>
+    <div style="font-size:10px;color:var(--muted);text-align:center;">As alterações ficam salvas neste navegador.</div>
   </div>
 </div>
 
@@ -818,9 +856,119 @@ function renderAll(){
   renderHoje();renderGroups();renderScorers();renderMataMata();renderCalendar();renderPainel();renderNews();
 }
 
-function aplicarLogoSalva(){try{const d=localStorage.getItem('rodrigao_logo');if(d){document.getElementById('brand-logo').src=d;const s=document.getElementById('sidebar-logo');if(s)s.src=d;}}catch(e){}}
-function trocarLogo(ev){const f=ev.target.files&&ev.target.files[0];if(!f)return;if(!f.type.startsWith('image/')){alert('Selecione um arquivo de imagem.');return;}if(f.size>3*1024*1024){alert('Imagem muito grande (máx. 3MB).');return;}const r=new FileReader();r.onload=e=>{const d=e.target.result;try{localStorage.setItem('rodrigao_logo',d);}catch(_){alert('Não foi possível salvar (storage cheio).');return;}document.getElementById('brand-logo').src=d;const s=document.getElementById('sidebar-logo');if(s)s.src=d;alert('Logo atualizada! (salva apenas neste navegador)');};r.readAsDataURL(f);}
-aplicarLogoSalva();
+/* ============ LOGO: upload + recorte auto + ajustes ============ */
+const LG_KEY = 'rodrigao_logo_v2';
+const LG_DEFAULTS = { src: '', fit: 'cover', x: 50, y: 50 };
+
+function lgState(){
+  try { return Object.assign({}, LG_DEFAULTS, JSON.parse(localStorage.getItem(LG_KEY) || '{}')); }
+  catch(e){ return Object.assign({}, LG_DEFAULTS); }
+}
+function lgSave(s){ try { localStorage.setItem(LG_KEY, JSON.stringify(s)); } catch(e){ alert('Não foi possível salvar (storage cheio).'); } }
+
+function lgApply(s){
+  const root = document.documentElement;
+  root.style.setProperty('--logo-fit', s.fit);
+  root.style.setProperty('--logo-pos', s.x + '% ' + s.y + '%');
+  if (s.src){
+    const b = document.getElementById('brand-logo');
+    const sb = document.getElementById('sidebar-logo');
+    const pv = document.getElementById('logo-preview-img');
+    if (b) b.src = s.src;
+    if (sb) sb.src = s.src;
+    if (pv) pv.src = s.src;
+  }
+}
+
+/* Processa imagem: redimensiona com downscale por etapas (anti-aliasing) p/ ficar nítida em 56–120px */
+function processarImagem(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Falha ao ler arquivo'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Imagem inválida'));
+      img.onload = () => {
+        const MAX = 512; // tamanho alvo (suficiente p/ retina em 56–120px)
+        let { width: w, height: h } = img;
+        // Downscale em etapas (cada passo no máx /2) para evitar borrão
+        let src = img, cw = w, ch = h;
+        while (Math.max(cw, ch) > MAX * 2){
+          const nw = Math.max(1, Math.round(cw/2));
+          const nh = Math.max(1, Math.round(ch/2));
+          const c = document.createElement('canvas');
+          c.width = nw; c.height = nh;
+          const ctx = c.getContext('2d');
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(src, 0, 0, nw, nh);
+          src = c; cw = nw; ch = nh;
+        }
+        // Recorte automático: quadrado central
+        const side = Math.min(cw, ch);
+        const sx = (cw - side) / 2;
+        const sy = (ch - side) / 2;
+        const target = Math.min(MAX, side);
+        const out = document.createElement('canvas');
+        out.width = target; out.height = target;
+        const octx = out.getContext('2d');
+        octx.imageSmoothingEnabled = true;
+        octx.imageSmoothingQuality = 'high';
+        octx.drawImage(src, sx, sy, side, side, 0, 0, target, target);
+        // PNG p/ preservar transparência; se for grande, usa JPEG
+        let data = out.toDataURL('image/png');
+        if (data.length > 700000) data = out.toDataURL('image/jpeg', 0.92);
+        resolve(data);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function trocarLogo(ev){
+  const f = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!f) return;
+  if (!f.type.startsWith('image/')) { alert('Selecione um arquivo de imagem.'); return; }
+  if (f.size > 8 * 1024 * 1024) { alert('Imagem muito grande (máx. 8MB).'); return; }
+  try {
+    const data = await processarImagem(f);
+    const s = lgState();
+    s.src = data;
+    lgSave(s); lgApply(s);
+  } catch(err){ alert('Não foi possível processar a imagem: ' + err.message); }
+}
+
+function abrirAjustesLogo(){
+  const s = lgState();
+  document.getElementById('lg-fit').value = s.fit;
+  document.getElementById('lg-x').value = s.x;
+  document.getElementById('lg-y').value = s.y;
+  document.getElementById('lg-fit-val').textContent = s.fit === 'cover' ? 'Preencher' : 'Ajustar';
+  document.getElementById('lg-x-val').textContent = s.x + '%';
+  document.getElementById('lg-y-val').textContent = s.y + '%';
+  document.getElementById('logo-modal').classList.add('open');
+}
+function fecharAjustesLogo(){ document.getElementById('logo-modal').classList.remove('open'); }
+
+function atualizarAjustes(){
+  const s = lgState();
+  s.fit = document.getElementById('lg-fit').value;
+  s.x = +document.getElementById('lg-x').value;
+  s.y = +document.getElementById('lg-y').value;
+  document.getElementById('lg-fit-val').textContent = s.fit === 'cover' ? 'Preencher' : 'Ajustar';
+  document.getElementById('lg-x-val').textContent = s.x + '%';
+  document.getElementById('lg-y-val').textContent = s.y + '%';
+  lgSave(s); lgApply(s);
+}
+function resetarLogo(){
+  const cur = lgState();
+  const s = Object.assign({}, LG_DEFAULTS, { src: cur.src });
+  lgSave(s); lgApply(s); abrirAjustesLogo();
+}
+
+lgApply(lgState());
 window.onload=()=>{loadData();renderAll();renderAdminPanel();if(!NEWS.length)doSyncNews();};
 </script>
 </body>
