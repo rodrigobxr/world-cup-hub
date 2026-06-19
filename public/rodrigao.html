@@ -547,13 +547,14 @@ function normNome(s){return String(s||'').toLowerCase().normalize('NFD').replace
 function goalSig(g){return JSON.stringify({h:g?.h||[],a:g?.a||[]});}
 async function doSync(opts){
   const silent=!!(opts&&opts.silent);
+  const force=!!(opts&&opts.force);
   const overlay=document.getElementById('loading-overlay');
   const sub=document.getElementById('loading-subtext');
   if(!silent&&overlay){overlay.style.display='flex';sub.textContent='Buscando placares, gols e agenda atualizada (ESPN pública)...';}
   if(silent) document.getElementById('last-sync-label').textContent='Sincronizando placares...';
   let updated=0, live=0;
   try{
-    const r=await fetch('/api/public/wc-live',{cache:'no-store'});
+    const r=await fetch('/api/public/wc-live'+(force?'?force=1':''),{cache:'no-store'});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const data=await r.json();
     if(data.error) throw new Error(data.error);
