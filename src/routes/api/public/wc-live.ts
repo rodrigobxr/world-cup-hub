@@ -164,8 +164,12 @@ export const Route = createFileRoute('/api/public/wc-live')({
           const payload = {
             updatedAt: new Date().toISOString(),
             count: matches.length,
+            league,
+            season,
+            apiErrors: hasErrors ? apiErrors : undefined,
             matches,
           }
+
           cache = { at: now, payload }
           return Response.json(payload, {
             headers: { 'Cache-Control': 'public, max-age=30', 'X-Cache': 'MISS' },
