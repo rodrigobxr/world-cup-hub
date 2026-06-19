@@ -72,7 +72,7 @@ const TTL_MS = 60_000
 export const Route = createFileRoute('/api/public/wc-live')({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
         const key = process.env.API_FOOTBALL_KEY
         if (!key) {
           return Response.json(
@@ -81,6 +81,37 @@ export const Route = createFileRoute('/api/public/wc-live')({
           )
         }
 
+        const url = new URL(request.url)
+        const debug = url.searchParams.get('debug') === '1'
+        const leagueParam = url.searchParams.get('league')
+        const seasonParam = url.searchParams.get('season')
+
+        const headers = { 'x-apisports-key': key }
+
+        if (debug) {
+          // Descobre quais ligas de Copa do Mundo estão disponíveis nessa chave
+          const [leaguesRes, statusRes] = await Promise.all([
+            fetch('https://v3.football.api-sports.io/leagues?search=world%20cup', { headers }),
+            fetch('https://v3.football.api-sports.io/status', { headers }),
+          ])
+          const leagues = await leaguesRes.json()
+          const status = await statusRes.json()
+          const simplified = (leagues.response ?? []).map((l: any) => ({
+            id: l.league?.id,
+            name: l.league?.name,
+            type: l.league?.type,
+            country: l.country?.name,
+            seasons: (l.seasons ?? []).map((s: any) => ({
+              year: s.year,
+              start: s.start,
+              end: s.end,
+              current: s.current,
+            })),
+          }))
+          return Response.json({ status: status.response, leagues: simplified })
+        }
+
+
         const now = Date.now()
         if (cache && now - cache.at < TTL_MS) {
           return Response.json(cache.payload, {
@@ -88,10 +119,13 @@ export const Route = createFileRoute('/api/public/wc-live')({
           })
         }
 
+        const league = leagueParam ?? '1'
+        const season = seasonParam ?? '2026'
+
         try {
           const r = await fetch(
-            'https://v3.football.api-sports.io/fixtures?league=1&season=2026',
-            { headers: { 'x-apisports-key': key } },
+            `https://v3.football.api-sports.io/fixtures?league=${league}&season=${season}`,
+            { headers },
           )
           if (!r.ok) {
             return Response.json(
@@ -101,6 +135,9 @@ export const Route = createFileRoute('/api/public/wc-live')({
           }
           const json: any = await r.json()
           const fixtures: any[] = json.response ?? []
+          const apiErrors = json.errors
+          const hasErrors = apiErrors && (Array.isArray(apiErrors) ? apiErrors.length : Object.keys(apiErrors).length)
+
 
           const matches = fixtures.map((f) => {
             const dt = new Date(f.fixture.date)
@@ -127,8 +164,12 @@ export const Route = createFileRoute('/api/public/wc-live')({
           const payload = {
             updatedAt: new Date().toISOString(),
             count: matches.length,
+            league,
+            season,
+            apiErrors: hasErrors ? apiErrors : undefined,
             matches,
           }
+
           cache = { at: now, payload }
           return Response.json(payload, {
             headers: { 'Cache-Control': 'public, max-age=30', 'X-Cache': 'MISS' },
