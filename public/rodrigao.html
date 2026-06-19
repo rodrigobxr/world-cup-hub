@@ -545,11 +545,12 @@ function showToast(msg,ok=true){
 
 function normNome(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'');}
 function goalSig(g){return JSON.stringify({h:g?.h||[],a:g?.a||[]});}
-async function doSync(){
+async function doSync(opts){
+  const silent=!!(opts&&opts.silent);
   const overlay=document.getElementById('loading-overlay');
   const sub=document.getElementById('loading-subtext');
-  overlay.style.display='flex';
-  sub.textContent='Buscando placares, gols e agenda atualizada (ESPN pública)...';
+  if(!silent&&overlay){overlay.style.display='flex';sub.textContent='Buscando placares, gols e agenda atualizada (ESPN pública)...';}
+  if(silent) document.getElementById('last-sync-label').textContent='Sincronizando placares...';
   let updated=0, live=0;
   try{
     const r=await fetch('/api/public/wc-live',{cache:'no-store'});
@@ -573,14 +574,16 @@ async function doSync(){
       if(JSON.stringify({hs:m.hs,as:m.as,status:m.status,time:m.time,goals:goalSig(m.goals)})!==before) updated++;
     });
     saveData();
-    overlay.style.display='none';
+    if(overlay) overlay.style.display='none';
     renderAll();
-    showToast('✓ '+updated+' partida(s) atualizada(s)'+(live?' • '+live+' AO VIVO':''));
-    document.getElementById('last-sync-label').textContent='Última sync: '+new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    renderAdminPanel();
+    if(!silent) showToast('✓ '+updated+' partida(s) atualizada(s)'+(live?' • '+live+' AO VIVO':'')+' • '+(data.count||0)+' jogos na fonte');
+    document.getElementById('last-sync-label').textContent='Última sync: '+new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+' • '+(data.count||0)+' jogos ESPN';
   }catch(e){
-    overlay.style.display='none';
+    if(overlay) overlay.style.display='none';
     console.error('sync fail',e);
-    showToast('✗ Falha na sync: '+e.message,false);
+    if(!silent) showToast('✗ Falha na sync: '+e.message,false);
+    else document.getElementById('last-sync-label').textContent='Falha na sync automática.';
   }
 }
 

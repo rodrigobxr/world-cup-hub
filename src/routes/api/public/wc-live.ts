@@ -153,8 +153,8 @@ function convertEspnEvent(event: EspnEvent) {
     status,
     h: ptName(home.team.displayName),
     a: ptName(away.team.displayName),
-    hs: home.score !== undefined && home.score !== '' ? Number(home.score) : '',
-    as: away.score !== undefined && away.score !== '' ? Number(away.score) : '',
+    hs: status !== 'NS' && home.score !== undefined && home.score !== '' ? Number(home.score) : '',
+    as: status !== 'NS' && away.score !== undefined && away.score !== '' ? Number(away.score) : '',
     goals,
   }
 }
