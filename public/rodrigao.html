@@ -590,44 +590,18 @@ async function doSync(opts){
 async function doSyncNews(){
   const el=document.getElementById('news-container');
   el.innerHTML='<div style="color:var(--dim);text-align:center;padding:2rem;grid-column:1/-1;">Buscando notícias da Copa 2026...</div>';
-  const curatedNews=[
-    {title:'Messi faz hat-trick, chega a marca histórica e vira destaque da rodada',summary:'Craque argentino marcou três vezes contra a Argélia; informação confrontada em ge, FIFA e veículos nacionais.',source:'ge.globo / FIFA',url:'https://ge.globo.com/futebol/copa-do-mundo/noticia/2026/06/17/messi-festeja-vitoria-da-argentina-e-recorde.ghtml'},
-    {title:'Haaland marca duas vezes na estreia da Noruega contra o Iraque',summary:'Relatos de FIFA, ESPN e Estadão confirmam dois gols de Haaland, não três, na vitória norueguesa por 4 a 1.',source:'FIFA / ESPN / Estadão',url:'https://www.fifa.com/pt/articles/iraque-noruega-melhores-momentos-resumo-grupo-i'},
-    {title:'Portugal empata com a RD Congo; João Neves e Wissa fazem os gols',summary:'Cristiano Ronaldo teve atuação apagada; o gol português foi de João Neves, confirmado por FIFA, ESPN e O Globo.',source:'FIFA / ESPN / O Globo',url:'https://www.espn.com/soccer/match/_/gameId/760435/congo-dr-portugal'},
-    {title:'Suécia goleia a Tunísia; Ayari, Isak, Gyökeres e Svanberg marcam',summary:'A súmula confrontada indica dois gols de Yasin Ayari e não registra gol de Ibrahimović, já aposentado.',source:'FIFA / ESPN / Sky Sports',url:'https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/articles/sweden-tunisia-highlights-match-report'}
-  ];
-  const feeds=[
-    {src:'ge.globo',url:'https://ge.globo.com/futebol/copa-do-mundo/rss.xml'},
-    {src:'ESPN Brasil',url:'https://www.espn.com.br/espn/rss/futebol/news'},
-    {src:'CBF',url:'https://www.cbf.com.br/rss/noticias'}
-  ];
-  const proxy='https://api.allorigins.win/raw?url=';
-  const all=[...curatedNews];
-  for(const f of feeds){
-    try{
-      const r=await fetch(proxy+encodeURIComponent(f.url));
-      if(!r.ok) continue;
-      const txt=await r.text();
-      const doc=new DOMParser().parseFromString(txt,'text/xml');
-      const items=Array.from(doc.querySelectorAll('item')).slice(0,8);
-      items.forEach(it=>{
-        const title=it.querySelector('title')?.textContent||'';
-        const link=it.querySelector('link')?.textContent||'#';
-        const desc=(it.querySelector('description')?.textContent||'').replace(/<[^>]*>/g,'').slice(0,160);
-        const low=(title+' '+desc).toLowerCase();
-        if(f.src==='ge.globo' || low.includes('copa')||low.includes('mundo')||low.includes('fifa')||low.includes('seleção')||low.includes('brasil')){
-          all.push({title,url:link,summary:desc,source:f.src});
-        }
-      });
-    }catch(e){console.warn('feed fail',f.src,e);}
+  try{
+    const r=await fetch('/api/public/wc-news',{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    if(data.error) throw new Error(data.error);
+    NEWS=(data.news||[]).slice(0,4);
+    saveData();renderNews();showToast('✓ NOTÍCIAS ATUALIZADAS!');
+  }catch(e){
+    console.error('news sync fail',e);
+    el.innerHTML='<div style="color:var(--dim);text-align:center;padding:2rem;grid-column:1/-1;">Não foi possível buscar notícias agora.</div>';
+    showToast('✗ Falha nas notícias: '+e.message,false);
   }
-  // Top 4 destaques do dia, sem duplicatas por título
-  const seen={};
-  const uniq=all.filter(n=>{const k=(n.title||'').trim().toLowerCase();if(seen[k])return false;seen[k]=1;return !!k;});
-  NEWS=uniq.slice(0,4);
-  saveData();
-  renderNews();
-  showToast('✓ NOTÍCIAS ATUALIZADAS!');
 }
 
 function renderHoje(){
