@@ -543,16 +543,43 @@ function showToast(msg,ok=true){
   setTimeout(()=>{el.style.opacity='0';setTimeout(()=>el.remove(),300);},3000);
 }
 
+function normNome(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z]/g,'');}
 async function doSync(){
   const overlay=document.getElementById('loading-overlay');
   const sub=document.getElementById('loading-subtext');
   overlay.style.display='flex';
-  sub.textContent='Aplicando dados mais recentes...';
-  await new Promise(r=>setTimeout(r,1500));
-  overlay.style.display='none';
-  renderAll();
-  showToast('✓ DADOS SINCRONIZADOS!');
-  document.getElementById('last-sync-label').textContent='Última sync: '+new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  sub.textContent='Buscando placares ao vivo (API-Football)...';
+  let updated=0, live=0;
+  try{
+    const r=await fetch('/api/public/wc-live',{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    if(data.error) throw new Error(data.error);
+    const apiByKey={};
+    (data.matches||[]).forEach(m=>{
+      const k=m.d+'|'+normNome(m.h)+'|'+normNome(m.a);
+      apiByKey[k]=m;
+    });
+    RESULTS.forEach(m=>{
+      if(m.g==='MM') return; // mata-mata atualiza só quando chaves definidas
+      const k=m.d+'|'+normNome(m.h)+'|'+normNome(m.a);
+      const api=apiByKey[k];
+      if(!api) return;
+      const before=JSON.stringify({hs:m.hs,as:m.as,status:m.status});
+      m.hs=api.hs;m.as=api.as;m.status=api.status;m.time=api.time;
+      if(api.status==='LIVE') live++;
+      if(JSON.stringify({hs:m.hs,as:m.as,status:m.status})!==before) updated++;
+    });
+    saveData();
+    overlay.style.display='none';
+    renderAll();
+    showToast('✓ '+updated+' partida(s) atualizada(s)'+(live?' • '+live+' AO VIVO':''));
+    document.getElementById('last-sync-label').textContent='Última sync: '+new Date().toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  }catch(e){
+    overlay.style.display='none';
+    console.error('sync fail',e);
+    showToast('✗ Falha na sync: '+e.message,false);
+  }
 }
 
 async function doSyncNews(){
