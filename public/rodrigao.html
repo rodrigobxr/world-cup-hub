@@ -1001,7 +1001,7 @@ function resetarLogo(){
 }
 
 lgApply(lgState());
-window.onload=()=>{loadData();renderAll();renderAdminPanel();if(!NEWS.length)doSyncNews();};
+window.onload=()=>{loadData();renderAll();renderAdminPanel();doSync({silent:true});if(!NEWS.length)doSyncNews();};
 </script>
 </body>
 </html>
