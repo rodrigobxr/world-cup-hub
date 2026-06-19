@@ -199,6 +199,29 @@ body { font-family: 'Inter', sans-serif; background: var(--bg-page); color: var(
   </div>
 </div>
 
+<div class="logo-modal" id="logo-modal" onclick="if(event.target===this)fecharAjustesLogo()">
+  <div class="logo-modal-box">
+    <h3>⚙ Ajustes da Logo</h3>
+    <div class="logo-preview"><img id="logo-preview-img" src="logo-rodrigao.png" alt=""></div>
+    <button class="btn primary" type="button" onclick="document.getElementById('logo-file').click()">📁 Escolher nova imagem</button>
+    <label>Ajuste <span id="lg-fit-val">Preencher</span>
+      <select id="lg-fit" onchange="atualizarAjustes()" style="margin-left:8px;">
+        <option value="cover">Preencher (cortar)</option>
+        <option value="contain">Ajustar (sem cortar)</option>
+      </select>
+    </label>
+    <label>Posição horizontal <span id="lg-x-val">50%</span></label>
+    <input type="range" id="lg-x" min="0" max="100" value="50" oninput="atualizarAjustes()">
+    <label>Posição vertical <span id="lg-y-val">50%</span></label>
+    <input type="range" id="lg-y" min="0" max="100" value="50" oninput="atualizarAjustes()">
+    <div class="row">
+      <button class="btn" type="button" onclick="resetarLogo()">↺ Resetar</button>
+      <button class="btn primary" type="button" onclick="fecharAjustesLogo()">✓ Fechar</button>
+    </div>
+    <div style="font-size:10px;color:var(--muted);text-align:center;">As alterações ficam salvas neste navegador.</div>
+  </div>
+</div>
+
 <nav class="mobile-nav" id="mobileNav">
   <button data-mn="hoje" class="active" onclick="nav('hoje')">📅 HOJE</button>
   <button data-mn="painel" onclick="nav('painel')">⬡ VISÃO GERAL</button>
