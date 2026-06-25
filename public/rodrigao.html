@@ -711,6 +711,47 @@ function renderScorers(){
     </div>`).join('');
 }
 
+function isGroupComplete(g){
+  const ms=RESULTS.filter(r=>r.g===g);
+  return ms.length>=6 && ms.every(r=>r.status==='FT');
+}
+function resolveSeed(label){
+  if(!label) return label;
+  const s=String(label).trim();
+  let m=/^([12])º\s+([A-L])$/.exec(s);
+  if(m){
+    const pos=parseInt(m[1])-1, g=m[2];
+    if(isGroupComplete(g)){
+      const st=getGroupStandings(g);
+      return (st[pos]&&st[pos].name)||s;
+    }
+    return s;
+  }
+  m=/^Venc\.\s+(\d+)$/.exec(s);
+  if(m){
+    const id=parseInt(m[1]);
+    const mt=RESULTS.find(r=>r.id===id||r.id===String(id));
+    if(mt&&mt.status==='FT'&&mt.hs!==''&&mt.as!==''){
+      const hs=parseInt(mt.hs),as=parseInt(mt.as);
+      if(hs>as) return resolveSeed(mt.h);
+      if(as>hs) return resolveSeed(mt.a);
+    }
+    return s;
+  }
+  m=/^Perd\.\s+(\d+)$/.exec(s);
+  if(m){
+    const id=parseInt(m[1]);
+    const mt=RESULTS.find(r=>r.id===id||r.id===String(id));
+    if(mt&&mt.status==='FT'&&mt.hs!==''&&mt.as!==''){
+      const hs=parseInt(mt.hs),as=parseInt(mt.as);
+      if(hs<as) return resolveSeed(mt.h);
+      if(as<hs) return resolveSeed(mt.a);
+    }
+    return s;
+  }
+  return s;
+}
+
 function renderMataMata(){
   const stageMap={'Fase de 32':'mm-f32','Oitavas':'mm-oitavas','Quartas':'mm-quartas','Semifinais':'mm-semis','3º Lugar':'mm-final','Final':'mm-final'};
   ['mm-f32','mm-oitavas','mm-quartas','mm-semis','mm-final'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML='';});
@@ -718,12 +759,14 @@ function renderMataMata(){
     const cid=stageMap[m.stage];if(!cid)return;
     const el=document.getElementById(cid);if(!el)return;
     const done=m.status==='FT';
+    const hName=resolveSeed(m.h), aName=resolveSeed(m.a);
+    const hIsTeam=hName!==m.h, aIsTeam=aName!==m.a;
     const score=done?`<span style="font-size:14px;font-weight:900;color:var(--gold);">${m.hs} × ${m.as}</span>`:'<span style="color:var(--dim);">vs</span>';
     el.innerHTML+=`<div class="mm-card">
       <span class="mm-match-num">#${m.id}</span>
       <div style="margin-top:8px;">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">${getFlagSm(m.h)}<span style="font-size:12px;font-weight:700;${done&&m.hs>m.as?'color:var(--gold);':''}">${m.h}</span></div>
-        <div style="display:flex;align-items:center;gap:6px;">${getFlagSm(m.a)}<span style="font-size:12px;font-weight:700;${done&&m.as>m.hs?'color:var(--gold);':''}">${m.a}</span></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">${hIsTeam?getFlagSm(hName):'<span style="width:18px;display:inline-block;"></span>'}<span style="font-size:12px;font-weight:700;${done&&m.hs>m.as?'color:var(--gold);':''}${!hIsTeam?'color:var(--dim);font-style:italic;':''}">${hName}</span></div>
+        <div style="display:flex;align-items:center;gap:6px;">${aIsTeam?getFlagSm(aName):'<span style="width:18px;display:inline-block;"></span>'}<span style="font-size:12px;font-weight:700;${done&&m.as>m.hs?'color:var(--gold);':''}${!aIsTeam?'color:var(--dim);font-style:italic;':''}">${aName}</span></div>
         <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.03);padding:5px 8px;border-radius:6px;">
           ${score}<span style="font-size:9px;font-weight:800;color:var(--muted);">${done?'FIM':m.d+' '+m.time}</span>
         </div>
